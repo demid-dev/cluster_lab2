@@ -1,0 +1,19 @@
+#!/bin/bash
+#PBS -l nodes=2:ppn=2
+#PBS -l walltime=00:05:00
+#PBS -N semenchenko
+#PBS -t 1-100
+
+cd $PBS_O_WORKDIR
+
+ml icc
+ml openmpi
+
+# Create the output directory if it doesn't exist
+mkdir -p ./output
+
+# Run MPI program
+mpiexec -np 2 ./mpi_hello_world >./output/mpi_${PBS_ARRAYID}.txt
+
+# Save the CPU cache sizes to a file for each node
+./cache.sh ./output/cache_${PBS_ARRAYID} &>/dev/null
