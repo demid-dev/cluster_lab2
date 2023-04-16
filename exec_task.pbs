@@ -11,7 +11,7 @@ ml openmpi
 mkdir -p output
 
 # Run MPI program
-mpiexec -np 2 ./mpi_hello_world >./output/mpi_${PBS_ARRAYID}.txt
+mpiexec ./mpi_hello_world >./output/mpi_${PBS_ARRAYID}.txt
 
 # Save the CPU cache sizes to a file for each node
 ./cache.sh ./output/cache_${PBS_ARRAYID}_${PBS_NODEFILE##*/}.txt
