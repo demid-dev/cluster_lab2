@@ -1,0 +1,32 @@
+#!/bin/bash
+#PBS -l nodes=2:ppn=2
+#PBS -l walltime=00:02:00
+#PBS -N cache_info
+#PBS -t 1-100
+
+cd $PBS_O_WORKDIR
+
+# Load required modules
+ml icc
+ml openmpi
+mkdir -p ./output
+
+# Get the CPU cache size for each level of cache
+L1_cache_size=$(lscpu | grep "L1d cache" | awk '{print $3}')
+L2_cache_size=$(lscpu | grep "L2 cache" | awk '{print $3}')
+L3_cache_size=$(lscpu | grep "L3 cache" | awk '{print $3}')
+
+# Save the CPU cache sizes to a file for the current node
+echo "Node: $(hostname)" >./output/cache_${PBS_ARRAYID}_${PBS_NODENUM}.txt
+echo "L1 cache size: $L1_cache_size" >>./output/cache_${PBS_ARRAYID}_${PBS_NODENUM}.txt
+echo "L2 cache size: $L2_cache_size" >>./output/cache_${PBS_ARRAYID}_${PBS_NODENUM}.txt
+echo "L3 cache size: $L3_cache_size" >>./output/cache_${PBS_ARRAYID}_${PBS_NODENUM}.txt
+
+# Wait for all nodes to finish writing their cache files
+wait
+
+# Concatenate all cache files into one for the current node
+cat ./output/cache_${PBS_ARRAYID}_${PBS_NODENUM}.txt >>./output/cache_${PBS_ARRAYID}.txt
+
+# Run the MPI program
+mpiexec -np 4 -hostfile $PBS_NODEFILE ./mpi_hello_world >mpi_${PBS_ARRAYID}.txt
