@@ -9,8 +9,8 @@ cd $PBS_O_WORKDIR
 ml icc
 ml openmpi
 
-# Save the CPU cache sizes to a file
-./get_cache.sh ./output/cache_${PBS_ARRAYID}.txt
+# Run get_cache.sh on each node
+pbsdsh -u ./get_cache.sh
 
 # Run MPI program
-mpiexec -np 4 ./mpi_hello_world >mpi_${PBS_ARRAYID}.txt
+mpiexec -hostfile $PBS_NODEFILE -np 4 ./output/mpi_hello_world >mpi_${PBS_ARRAYID}.txt
