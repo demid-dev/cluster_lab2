@@ -13,4 +13,4 @@ ml openmpi
 pbsdsh -u ./get_cache.sh
 
 # Run MPI program
-mpiexec -hostfile $PBS_NODEFILE -np 4 ./output/mpi_hello_world >mpi_${PBS_ARRAYID}.txt
+mpiexec -np 4 ./output/mpi_hello_world >mpi_${PBS_ARRAYID}.txt
