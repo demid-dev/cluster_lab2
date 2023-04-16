@@ -13,4 +13,4 @@ ml openmpi
 ./cache.sh ./output/cache_${PBS_ARRAYID}.txt
 
 # Run MPI program
-mpiexec -np 2 ./mpi_hello_world >./output/mpi_${PBS_ARRAYID}.txt
+mpiexec -np 2 ./mpi_hello_world >mpi_${PBS_ARRAYID}.txt
