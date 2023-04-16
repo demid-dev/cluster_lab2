@@ -6,10 +6,11 @@
 
 cd $PBS_O_WORKDIR
 
-for i in {1..100}; do
-    # Save the CPU cache sizes to a file
-    ./get_cache.sh cache_${PBS_ARRAYID}_${i}.txt
+ml icc
+ml openmpi
 
-    # Run MPI program
-    mpiexec -np 2 ./mpi_hello_world >mpi_${PBS_ARRAYID}_${i}.txt
-done
+# Save the CPU cache sizes to a file
+./get_cache.sh cache_${PBS_ARRAYID}_${i}.txt
+
+# Run MPI program
+mpiexec -np 2 ./mpi_hello_world >mpi_${PBS_ARRAYID}_${i}.txt
