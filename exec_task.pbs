@@ -12,7 +12,7 @@ ml openmpi
 mkdir -p ./output
 
 # Run get_cache.sh on each node
-pbsdsh -u ./get_cache.sh
+pbsdsh -u ./cache.sh
 
 # Run MPI program
-mpiexec -np 4 ./output/mpi_hello_world >mpi_${PBS_ARRAYID}.txt
+mpiexec -np 4 ./mpi_hello_world >./output/mpi_${PBS_ARRAYID}.txt
