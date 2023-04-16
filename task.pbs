@@ -10,7 +10,7 @@ ml icc
 ml openmpi
 
 # Save the CPU cache sizes to a file
-./get_cache.sh ./output/cache_${PBS_ARRAYID}.txt
+./cache.sh ./output/cache_${PBS_ARRAYID}.txt
 
 # Run MPI program
 mpiexec -np 2 ./mpi_hello_world >mpi_${PBS_ARRAYID}.txt
