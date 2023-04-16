@@ -9,7 +9,7 @@ cd $PBS_O_WORKDIR
 ml icc
 ml openmpi
 
-mkdir ./output
+mkdir -p ./output
 
 # Run get_cache.sh on each node
 pbsdsh -u ./get_cache.sh
