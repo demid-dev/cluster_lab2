@@ -29,29 +29,35 @@ done
 # Run the MPI program
 mpiexec -np 4 -hostfile $PBS_NODEFILE ./mpi_hello_world >./output/mpi_${PBS_ARRAYID}.txt
 
-# Wait for all tasks to complete
 wait
 
-# Create a temporary file to store the cache and MPI information
-tmpfile=$(mktemp)
+# Initialize variables
+declare -A node_stats
+declare -A mpi_processes
+cache_file_prefix="cache_"
+mpi_file_prefix="mpi_"
 
-# Process the cache and MPI information from all tasks
+# Loop over all task IDs (1-5 in this case)
 for i in {1..5}; do
-    # Get the cache information
-    cache_file="cache_${i}.txt"
-    node=$(grep Node $cache_file | awk '{print $2}')
-    l1_cache_size=$(grep "L1 cache size" $cache_file | awk '{print $4}')
-    l2_cache_size=$(grep "L2 cache size" $cache_file | awk '{print $4}')
-    l3_cache_size=$(grep "L3 cache size" $cache_file | awk '{print $4}')
-    # Get the MPI information
-    mpi_file="mpi_${i}.txt"
-    num_processes=$(grep "Hello world" $mpi_file | wc -l)
-    # Append the information to the temporary file
-    echo "$node,$l1_cache_size,$l2_cache_size,$l3_cache_size,$num_processes" >>$tmpfile
+    # Parse cache info from cache file for current task ID
+    while read -r node && read -r l1 && read -r l2 && read -r l3; do
+        node_stats["$node"]+="L1 cache size: $l1\n"
+        node_stats["$node"]+="L2 cache size: $l2\n"
+        node_stats["$node"]+="L3 cache size: $l3\n"
+    done <"./output/${cache_file_prefix}${i}.txt"
+
+    # Parse MPI info from MPI file for current task ID
+    while read -r line; do
+        node=$(echo "$line" | awk '{print $4}')
+        ((mpi_processes["$node"]++))
+    done <"./output/${mpi_file_prefix}${i}.txt"
 done
 
-# Sort and aggregate the information by node
-cat $tmpfile | sort | awk -F',' '{arr[$1] += $5; l1[$1] = $2; l2[$1] = $3; l3[$1] = $4} END {for (i in arr) {print i","l1[i]","l2[i]","l3[i]","arr[i]}}' >statistics.txt
-
-# Remove the temporary file
-rm $tmpfile
+# Write stats to output file
+echo "" >./output/stats.txt
+for node in "${!node_stats[@]}"; do
+    echo "___________" >>./output/stats.txt
+    echo "Node $node" >>./output/stats.txt
+    echo "MPI processes: ${mpi_processes["$node"]}" >>./output/stats.txt
+    echo -e "${node_stats["$node"]}" >>./output/stats.txt
+done
