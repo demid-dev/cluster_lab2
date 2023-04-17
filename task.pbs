@@ -2,7 +2,7 @@
 #PBS -l nodes=2:ppn=2
 #PBS -l walltime=00:02:00
 #PBS -N cache_info
-#PBS -t 1-5
+#PBS -t 1-100
 cd $PBS_O_WORKDIR
 
 # Load required modules
@@ -32,5 +32,5 @@ mpiexec -np 4 -hostfile $PBS_NODEFILE ./mpi_hello_world >./output/mpi_${PBS_ARRA
 wait
 
 # Combine cache output and MPI output and save to statistics.txt
-awk '{printf "%s%s", $0, (NR%4 ? " " : "\n")}' cache_*.txt | sort -u >statistics.txt
-grep "Hello world from processor" mpi* | awk '{print $5}' | sed 's/\..*//' | sort | uniq -c | awk '{print "MPI processes count for "$2": "$1}' >>statistics.txt
+awk '{printf "%s%s", $0, (NR%4 ? " " : "\n")}' ./output/cache_*.txt | sort -u >statistics.txt
+grep "Hello world from processor" ./output/mpi* | awk '{print $5}' | sed 's/\..*//' | sort | uniq -c | awk '{print "MPI processes count for "$2": "$1}' >>statistics.txt
