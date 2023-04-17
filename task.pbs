@@ -31,33 +31,31 @@ mpiexec -np 4 -hostfile $PBS_NODEFILE ./mpi_hello_world >./output/mpi_${PBS_ARRA
 
 wait
 
-# Initialize variables
-declare -A node_stats
-declare -A mpi_processes
-cache_file_prefix="cache_"
-mpi_file_prefix="mpi_"
+#!/bin/bash
 
-# Loop over all task IDs (1-5 in this case)
-for i in {1..5}; do
-    # Parse cache info from cache file for current task ID
-    while read -r node && read -r l1 && read -r l2 && read -r l3; do
-        node_stats["$node"]+="L1 cache size: $l1\n"
-        node_stats["$node"]+="L2 cache size: $l2\n"
-        node_stats["$node"]+="L3 cache size: $l3\n"
-    done <"./output/${cache_file_prefix}${i}.txt"
+# Create an array to store unique nodes and their cache sizes
+declare -A nodes
 
-    # Parse MPI info from MPI file for current task ID
+# Iterate through all files named cache_*.txt in the ./output directory
+for file in ./output/cache_*.txt; do
+    # Iterate through each line of the file
     while read -r line; do
-        node=$(echo "$line" | awk '{print $4}')
-        ((mpi_processes["$node"]++))
-    done <"./output/${mpi_file_prefix}${i}.txt"
+        # If the line starts with "Node:", store the node name
+        [[ "$line" == Node:* ]] && node=${line#Node: } && nodes[$node]="L1: , L2: , L3: "
+        # If the line starts with "L1 cache size:", store the L1 cache size for the current node
+        [[ "$line" == L1* ]] && nodes[$node]=${nodes[$node]/L1: /L1: ${line#L1 cache size: }}
+        # If the line starts with "L2 cache size:", store the L2 cache size for the current node
+        [[ "$line" == L2* ]] && nodes[$node]=${nodes[$node]/L2: /L2: ${line#L2 cache size: }}
+        # If the line starts with "L3 cache size:", store the L3 cache size for the current node
+        [[ "$line" == L3* ]] && nodes[$node]=${nodes[$node]/L3: /L3: ${line#L3 cache size: }}
+    done <"$file"
 done
 
-# Write stats to output file
-echo "" >./output/stats.txt
-for node in "${!node_stats[@]}"; do
-    echo "___________" >>./output/stats.txt
-    echo "Node $node" >>./output/stats.txt
-    echo "MPI processes: ${mpi_processes["$node"]}" >>./output/stats.txt
-    echo -e "${node_stats["$node"]}" >>./output/stats.txt
-done
+# Write the unique nodes and their cache sizes to a file named cache_sizes.txt
+{
+    echo "Cache sizes for unique nodes:"
+    for node in "${!nodes[@]}"; do
+        echo "Node: $node"
+        echo "${nodes[$node]}"
+    done
+} >./output/cache_sizes.txt
