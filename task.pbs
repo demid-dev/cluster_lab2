@@ -32,9 +32,26 @@ mpiexec -np 4 -hostfile $PBS_NODEFILE ./mpi_hello_world >./output/mpi_${PBS_ARRA
 # Wait for all tasks to complete
 wait
 
-# Process the output files to obtain the desired statistics
-echo "Node,Processes,L1 cache size,L2 cache size,L3 cache size" >statistics.csv
-for i in {1..100}; do
-    cat ./output/cache_${i}.txt | awk -v node=$i -F ': ' '/^Node:/ {n=$2}; /^L[123] cache size/ {l[NR]=$NF}; END {printf "%s,%s,%s,%s,%s\n",node,n,l[1],l[2],l[3]}' >>statistics.csv
-    cat ./output/mpi_${i}.txt | awk -v node=$i -F ', ' '/^Hello world/ {p[NR]=$NF}; END {printf "%s,%s,%s,%s,%s\n",node,NR,p[1],p[2],p[3]}' >>statistics.csv
+# Create a temporary file to store the cache and MPI information
+tmpfile=$(mktemp)
+
+# Process the cache and MPI information from all tasks
+for i in {1..5}; do
+    # Get the cache information
+    cache_file="cache_${i}.txt"
+    node=$(grep Node $cache_file | awk '{print $2}')
+    l1_cache_size=$(grep "L1 cache size" $cache_file | awk '{print $4}')
+    l2_cache_size=$(grep "L2 cache size" $cache_file | awk '{print $4}')
+    l3_cache_size=$(grep "L3 cache size" $cache_file | awk '{print $4}')
+    # Get the MPI information
+    mpi_file="mpi_${i}.txt"
+    num_processes=$(grep "Hello world" $mpi_file | wc -l)
+    # Append the information to the temporary file
+    echo "$node,$l1_cache_size,$l2_cache_size,$l3_cache_size,$num_processes" >>$tmpfile
 done
+
+# Sort and aggregate the information by node
+cat $tmpfile | sort | awk -F',' '{arr[$1] += $5; l1[$1] = $2; l2[$1] = $3; l3[$1] = $4} END {for (i in arr) {print i","l1[i]","l2[i]","l3[i]","arr[i]}}' >statistics.txt
+
+# Remove the temporary file
+rm $tmpfile
