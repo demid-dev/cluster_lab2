@@ -4,11 +4,15 @@
 #PBS -N cache_info
 #PBS -t 1-5
 cd $PBS_O_WORKDIR
+
 # Load required modules
 ml icc
 ml openmpi
+
 mkdir -p ./output
+
 node_list=$(sort -u $PBS_NODEFILE)
+
 # Loop over all nodes in the PBS node file
 for node in $node_list; do
     # Get the CPU cache size for each level of cache
@@ -20,4 +24,17 @@ for node in $node_list; do
     echo "L1 cache size: $L1_cache_size" >>./output/cache_${PBS_ARRAYID}.txt
     echo "L2 cache size: $L2_cache_size" >>./output/cache_${PBS_ARRAYID}.txt
     echo "L3 cache size: $L3_cache_size" >>./output/cache_${PBS_ARRAYID}.txt
+done
+
+# Run the MPI program
+mpiexec -np 4 -hostfile $PBS_NODEFILE ./mpi_hello_world >./output/mpi_${PBS_ARRAYID}.txt
+
+# Wait for all tasks to complete
+wait
+
+# Process the output files to obtain the desired statistics
+echo "Node,Processes,L1 cache size,L2 cache size,L3 cache size" >statistics.csv
+for i in {1..100}; do
+    cat ./output/cache_${i}.txt | awk -v node=$i -F ': ' '/^Node:/ {n=$2}; /^L[123] cache size/ {l[NR]=$NF}; END {printf "%s,%s,%s,%s,%s\n",node,n,l[1],l[2],l[3]}' >>statistics.csv
+    cat ./output/mpi_${i}.txt | awk -v node=$i -F ', ' '/^Hello world/ {p[NR]=$NF}; END {printf "%s,%s,%s,%s,%s\n",node,NR,p[1],p[2],p[3]}' >>statistics.csv
 done
